@@ -98,3 +98,94 @@ public class ShopPremium {
     }
 }
 ```
+
+## Rest Api
+- Implementuje się korzystając z adnotacji:
+- `@RestController` - dla klasy
+- `@RestMapping` - metoda restowa. Można też adnotować klasy. Wtedy ścieżka dla wszystkich metod będzie poprzedzona wartościa z tej adnotacji.
+- [NAJEFEKTYWNIEJSZA DROGA DO TWORZENIA REST API W SPRING](https://livebooks.pl/materials/v1/43)
+- [efektywne-rest-api.jpg](https://livebooks.pl/materials/v1/44)
+```java
+@RestController
+@RequestMapping("/api")
+public class Shop {
+
+	// http://localhost:8080/api/get-example
+	@RequestMapping("/get-example")
+	@RequestBody
+	public String purchase(){
+		return "Siema Byku!"	
+	}
+}
+``` 
+
+### Metody HTTP
+- `@RequestMapping` domyślnie stosuje metodę GET
+- Można wskazać na inne metody HTTP: GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS, TRACE
+- POST  
+  - Tworzy nowy zasób.
+  - Jest wykorzystywany do wszystkich innych operacji, które nie wpisują się w ramy innych metod.
+  - Może służyć do pobierania danych w przypadku kiedy musimy w ramach body dostarczyć dodatkowe parametry.
+- PUT
+  - Aktualizuje dany zasób na podstawie podanego identyfikatora.
+  - Może służyć do tworzenia nowego zasobu jeśli jego identyfikator jest znany.
+- PATCH
+  - Aktualizuje część wskazanego zasobu.
+   
+- Dostepne są aliasy metod webowych:
+  - `@GetMapping` 
+  - `@PostMapping` 
+  - `@PutMapping` 
+  - `@DeleteMapping` 
+  - `@PatchMapping` 
+
+### Parametryzacja metod REST-owych
+- Przykazywanie danych do metody odbywa się przez:
+  - nagłówek
+  - parametr
+  - sciężkę
+  - ciało
+  
+#### Przekazywanie przez nagłówek
+- Dotyczy metadanych, ustawienia kodowanie, szyfrowania, wybór języka format odpowiedzi itp.
+- Stosujemy adnotację `@RequestHeader`
+
+```
+@RequestMapping("/get-request-header")
+public String requestHeaderExample(@RequestHeader("number") Long number){
+	return "delivered by RequestHeader: "+ number;
+}
+```
+#### Przekazywanie przez parametr
+- Stosujemy adnotację `@RequestParam`
+
+```java
+@RequestMapping("/get-request-param")
+public String requestParamExample(@RequestParam("number") Long number){
+	return "delivered by RequestParam: "+ number;
+}
+```
+
+#### Przekazywanie przez adres
+- Typowe dla pobierania konkretnego elementu z kolekcji.
+- Kiedy API zwraca wiele stron wynikowych
+- Stosujemy adnotację `@PathVariable`
+
+```java
+@RequestMapping("/get-path-variable/{number}")
+public String pathVariableExample(@PathVariable("number") Long number){
+	return "delivered by PathVariable: "+ number;
+}
+```
+
+#### Przekazywanie przez ciało
+- Do przekazywania złożonuch obiektów, list, kolekcji.
+- Stosujemy adnotację `@RequestBody`.
+```java
+@RequestMapping("/get-request-body", method=RequestMethod.POST)
+public String requestBodyExample(@RequestBody Long number){
+	return "delivered by RequestBody: "+ number;
+}
+```
+
+## Dokumentowanie API
