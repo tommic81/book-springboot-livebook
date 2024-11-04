@@ -105,6 +105,8 @@ public class ShopPremium {
 - `@RestMapping` - metoda restowa. Można też adnotować klasy. Wtedy ścieżka dla wszystkich metod będzie poprzedzona wartościa z tej adnotacji.
 - [NAJEFEKTYWNIEJSZA DROGA DO TWORZENIA REST API W SPRING](https://livebooks.pl/materials/v1/43)
 - [efektywne-rest-api.jpg](https://livebooks.pl/materials/v1/44)
+- [repozytorium DTO](https://github.com/bykowski/springboot2/tree/patterns-dto)
+- 
 ```java
 @RestController
 @RequestMapping("/api")
@@ -185,6 +187,33 @@ public String pathVariableExample(@PathVariable("number") Long number){
 @RequestMapping("/get-request-body", method=RequestMethod.POST)
 public String requestBodyExample(@RequestBody Long number){
 	return "delivered by RequestBody: "+ number;
+}
+```
+
+### Mapowanie DTO
+- Pobrane obiekty z bazy należy jak najszybciej przemapować na DTO.
+
+```
+<dependency>
+  <groupId>org.modelmapper</groupId>
+  <artifactId>modelmapper</artifactId>
+  <version>3.0.0</version>
+</dependency>
+```
+### Ograniczanie widoczności
+- `@JsonView` - ustawiamy nad polami DTO oraz w metodzie rest api
+- Jako parametr podajemy klasy, które mają reprezentować widoki
+```
+public class Views {
+    public static class Public {
+    }
+}
+
+public class User {
+    public int id;
+
+    @JsonView(Views.Public.class)
+    public String name;
 }
 ```
 
