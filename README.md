@@ -217,4 +217,104 @@ public class User {
 }
 ```
 
-## Dokumentowanie API
+
+### Dokumentowanie API
+- [Przykład na github](https://livebooks.pl/materials/v1/52a)
+- [SWAGGER 2 – BUDOWANIE, WERYFIKOWANIE I DOKUMENTOWANIE API - PRZYKŁADY](https://livebooks.pl/materials/v1/52b)
+- [Swagger UI – przejrzysta wizualizacja zasobów API](https://bykowski.pl/swagger-ui-przejrzysta-wizualizacja-zasobow-api/)
+- [Test wiedzy](https://livebooks.pl/materials/v1/52c)
+#### Swagger - narzędzie do dokumentowania API
+```xml
+<dependency>
+  <groupId>io.springfox</groupId>
+  <artifactId>springfox-boot-starter</artifactId>
+  <version>3.0.0</version>
+</dependency>  
+```
+#### Konfiguracja
+- Klasa konfiguracyjna z andoracjami `@Configuration` i `@EnableWebMvc`
+- W klasie definiujemy obiekt Docket zamewnaijący metody konfiguracji dla Swagger UI
+```
+@Configuration
+@EnableWebMvc
+public class SwaggerConfig{
+
+  @Bean
+  public Docket getDocket(){
+  	return new Docket(DocumentationType.SWAGGER_2)
+  		.select()
+  		.apis(RequestHandlerSelectors.any())
+  		.paths(PathSelectors.any())
+  		.build();
+  }
+}
+```
+- adres swaggera: http://localhost:8080/swagger-ui
+- Przykład adnotacji dla metody Rest
+```
+    @ApiOperation(value = "Find student by id", notes = "provide information about student by id")
+    @GetMapping("/{id}")
+    public Student getStudents(@ApiParam(value = "unique id of student", example = "123") @PathVariable int id) {
+        return studentList.stream()
+                .filter(student -> student.getId() == id).findFirst().get();
+    }
+```
+- Przykład adnotacji dla modelu
+```java
+@ApiModel("Personal data of Student")
+public class Student {
+
+    @ApiModelProperty("unique id of student")
+    private int id;
+    private String name;
+    private String surname;
+
+    public Student() {
+    }
+
+    public Student(int id, String name, String surname) {
+        this.id = id;
+        this.name = name;
+        this.surname = surname;
+    }
+}
+```
+ 
+ 
+#### Zawężanie udostępnianej dokumentacji
+- Przykładowa definicja ogranicza generowanie dokumentacji dla usług spełniających 2 warunki: endpoint wystawiony na `/api/**` klasa kontrolera znajduje się w ścieżce `pl.bykowski.springbootswaggerexample`
+```java
+
+  @Bean
+  public Docket getDocket(){
+  	return new Docket(DocumentationType.SWAGGER_2)
+  		.select()
+  		.paths(PathSelectors.ant("/api/**"))
+  		.apis(RequestHandlerSelectors.basePackage("pl.bykowski.springbootswaggerexample"))		
+  	.build();
+  }
+```
+- Przykład z ApiInfo
+```java
+@Bean
+    public Docket get() {
+        return new Docket(DocumentationType.SWAGGER_2)
+                .select()
+                .paths(PathSelectors.ant("/api/**"))
+                .apis(RequestHandlerSelectors.basePackage("pl.bykowski.springbootswaggerexample"))
+                .build().apiInfo(createApiInfo());
+    }
+
+    private ApiInfo createApiInfo() {
+        return new ApiInfo("Stundes API",
+                "Students database",
+                "1.00",
+                "http://bykowski.pl",
+                new Contact("Przemek", "http://bykowski.pl", "przemek@bykowski.pl"),
+                "my own licence",
+                "http://bykowski.pl",
+                Collections.emptyList()
+        );
+    }
+```
+
