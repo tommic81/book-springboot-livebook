@@ -318,3 +318,21 @@ public class Student {
     }
 ```
 
+## Spring MVC
+
+- [spring-mvc](https://livebooks.pl/materials/v1/56)
+- [Czy Programiście Warto Się Specjalizować?](https://livebooks.pl/materials/v1/57a)
+- [Test wiedzy do rozdziału: 03 SPRING MVC](https://livebooks.pl/materials/v1/57b)
+### Wzorzec MVC
+- Model - jest reprezentacją logiki aplikacji np. klasa Car i jego kilka obiektów
+- Controler - przyjmuje dane wejściowe od użytkownika i reaguje na jego poczynania, zarządzając aktualizacje modelu oraz odświeżenie widoków
+- View - opisuje jak wyyświetlić pewną część modelu w ramach interfejsu użytkownika
+
+##### Obsługa żadań
+1. DispatcherServlet
+   + Handler Mapping
+   + Controller
+   + View Resolver
+   + View
+   
+57
