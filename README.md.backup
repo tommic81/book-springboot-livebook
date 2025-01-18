@@ -336,6 +336,7 @@ public class Student {
    + View
    
 ## Rest client
+- [Test wiedzy](https://livebooks.pl/materials/v1/65)
 ### Klasa `RestTemplate`
 - Metoda `Exchange`
   - obsługuje metody GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS, TRACE
@@ -379,4 +380,64 @@ public String callPost(){
 - Najczęściej trzeba zbudować klasę modelową dla zwracanego obiektu
 - [generator modeli z jsona](https://www.jsonschema2pojo.org)
 - [Try Public APIs for free](https://livebooks.pl/materials/v1/64)
-- [Test wiedzy](https://livebooks.pl/materials/v1/64)
+
+## Programowanie aspektowe i zadania cykliczne
+- [Zastosowanie Wzorca Proxy w Praktycznych Rozwiązaniach](https://livebooks.pl/materials/v1/68)
+- Przechwytywanie działąń danej metodyw celu uruchomienia jakiegoś framentu kodu przed lub po logice wykonującej się w przechwytywanej metodzie.
+- Zastosowanie:  
+  - sprawdzanie uprawnień użytkownika
+  - logowanie zdarzeń
+  - obsługa wyjątków
+  - obsługa tranzakcji
+  
+### Pojęcia dotyczące AOP
+- Punkt przecięcia (Pointcut) wyrażenie (w postaci ścieżki lub adnotacji), które definiuje miejsce wywołania porady
+- Porada (advice) - metoda, która zostanie wywołana gdy warunek zdefiniowany w punkcie przecięcia zostanie spełniony
+  - @Before, @After, @Around
+- Aspekt - klasa, która zawiera porady
+  - Oznaczona `@Aspect`
+  - Musi być komponentem zarządzanym przez Spring
+- Przykład 1
+```java
+public String sayHello(){
+	 return "Hello";
+}
+
+@Aspect
+@Component
+public class HelloAspect{
+
+@Around("execution(String pl.bykowski.springbootaop.HelloApi.sayHello())")
+	public void aroundHello(ProceedingJointPoint jointPoint) throws Throwable{
+		System.out.println("aroundHello");
+		jointPoint.proceed();
+	}
+}
+
+@Before("execution(String pl.bykowski.springbootaop.HelloApi.sayHello())")
+	public void beforeHello(){
+		System.out.println("beforeHello");
+	}
+}
+
+@After("execution(String pl.bykowski.springbootaop.HelloApi.sayHello())")
+	public void afterHello(){
+		System.out.println("afterHello");
+	}
+}
+```
+### Wykjorzystanie adnotacji
+- Definiujemy własną adnotację, która można dodać nad metodą biznesową
+```
+@HelloAspect
+public String sayHello(){
+	 return "Hello";
+}
+```
+- W punkcie przecieńci aokreślamy, która adnatacja musi być śledzona
+```
+@Before("@annotation(HelloAspect)")
+public void beforeHello(){
+	 System.out.println("beforeHello");
+}
+```
