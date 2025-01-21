@@ -467,3 +467,93 @@ public void beforeHello(){
 - hardcodowaniew konfiguracji,
 - probematyczność przy  testowaniu,
 - zmiany częstotliwości wykonywania zadania wymaga przebudowania całej aplikacji.
+
+## Spring JDBC
+- [Github - spring-jdbc](https://livebooks.pl/materials/v1/86a)
+- [Spring Boot We Współpracy Z JDBC](https://livebooks.pl/materials/v1/86b)
+- [Test wiedzy do rozdziału: 06 SPRING JDBC](https://livebooks.pl/materials/v1/87)
+- JDBC(Java DataBase Connectivity) - najprostszy sposób komunikowania się z bazami danych
+- interfejs, dzięki któremu możemy wykonywać najprostsze zapytania SQL na bazie danych w javam
+- zależności
+
+```xml
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-jdbc</artifactId>
+</dependency>
+
+<!--sterownik do bazy danych -->
+<dependency>
+	<groupId>mysql</groupId>
+	<artifactId>mysql-connector-java</artifactId>
+</dependency>
+```
+- przykład:
+```java
+
+@Configuration
+public class Config {
+
+	@Value("${url}")
+	private String url;
+	
+	@Value("${dbUser}")
+	private String dbUser;
+	
+	@Value("${password}")
+	private String password;
+
+	@Bean
+	public DataSource getDataSource(){
+		DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create();
+		dataSourceBuilder.url(url);
+		dataSourceBuilder.username(dbUser);
+		dataSourceBuilder.password(password);
+		dataSourceBuilder.driverClassName("com.mysql.jdbc.Driver");
+		return dataSourceBuilder.build();
+	}
+	
+	@Bean
+	public JdbcTemplate getJdbcTemplate(){
+		return new JdbcTemplate(getDataSource());
+	}
+}
+```
+- przykład DAO:
+```java
+
+@Repository
+public class CarDao {
+
+	private JdbcTemplate jdbcTemplate;
+
+	@Autowired
+	public CarDao(JdbcTemplate jdbcTemplate){
+		this.jdbcTemplate = jdbcTemplate;
+	}
+
+	public void save(Car car){
+		String sql = "INSERT INTO Car VALUES(?,?,?,?)";
+		jdbcTemplate.update(sql, new Object[]{
+		car.getCarId(),
+		car.getMark(),
+		car.getModel(),
+		car.getColor()
+		});
+	}
+	
+	
+	public List<Map<String,Object>> showByMark(String mark){
+		String sql = "SELECT * FROM Car WHERE mark LIKE ?";
+		return jdbcTemplate.queryForList(sql, new Object[]{mark});
+	}
+	
+	@EventListener(ApplicationReadyEvent.class)
+	public void dbInit(){
+		save(new Car(1, "Fiat", "126p", "red"));
+		save(new Car(2, "Fiat", "126p", "black"));
+		save(new Car(3, "Audi", "A1", "silver"));
+		save(new Car(4, "Audi", "A2", "white"));
+	}
+}
+```
