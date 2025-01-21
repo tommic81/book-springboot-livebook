@@ -426,7 +426,7 @@ public class HelloAspect{
 	}
 }
 ```
-### Wykjorzystanie adnotacji
+### Wykorzystanie adnotacji
 - Definiujemy własną adnotację, która można dodać nad metodą biznesową
 ```
 @HelloAspect
@@ -434,10 +434,36 @@ public String sayHello(){
 	 return "Hello";
 }
 ```
-- W punkcie przecieńci aokreślamy, która adnatacja musi być śledzona
+- W punkcie przecieńci aokreślamy, która adnatacja ma być śledzona
 ```
 @Before("@annotation(HelloAspect)")
 public void beforeHello(){
 	 System.out.println("beforeHello");
 }
 ```
+## Zadania cykliczne
+- [Test wiedzy](https://livebooks.pl/materials/v1/79)
+- Operacje, które wykonują metody co zadany interwał czasowy.
+- W klasie konfiguracyjnej umieszczamy `@EnableScheduling`.
+- Zadania cykliczne konfigurujemy adnotacją `Scheduled` z parametrami:
+  - fixedDelay - co ile sek od zakończenia poprzedniego wykonania ma się wywołąć metoda
+  - cron - wyrażenie **cron** określa interwał czasu
+  - fixedRate - interwał czasowy, metoda wykona się niezależnie czy poprzednia zakończyła zadanie
+  
+### Przykłady
+- `@Scheduled(fixedDelay = 1000)` - co 1 sek od zakończenia poprzedniego zadania
+- `@Scheduled(fixedRate = 1000)` - co 1 sek
+- `@Scheduled(cron = "0 2 * * *")` - codziennie o 2:00 w nocy
+- `@Scheduled(fixedDelay = 1000, initialDelay = 5000)` - wystartuje po 5 sek, a potem wykonuje się co 1 sek
+- `@Scheduled(cron = "{cron.value}")` - zgodnie z wyrażeniem z konfiguracji
+- Co 5 min, a dodatkowo o 4:00 rano każdego dnia
+```
+@Schedules({
+	@Scheduled(cron = "*/5 * * * *"),
+	@Scheduled(cron = "0 */4 * * *")
+})
+```
+### Wady
+- hardcodowaniew konfiguracji,
+- probematyczność przy  testowaniu,
+- zmiany częstotliwości wykonywania zadania wymaga przebudowania całej aplikacji.
