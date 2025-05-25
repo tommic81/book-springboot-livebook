@@ -549,10 +549,155 @@ public class CarDao {
 	
 	@EventListener(ApplicationReadyEvent.class)
 	public void dbInit(){
-		save(new Car(1, "Fiat", "126p", "red"));
+		save(new Car(1, "Fiat", "126p", "red"));  
 		save(new Car(2, "Fiat", "126p", "black"));
 		save(new Car(3, "Audi", "A1", "silver"));
 		save(new Car(4, "Audi", "A2", "white"));
+	}
+}
+```
+## Spring Data
+- [Przykład video](https://livebooks.pl/materials/v1/102a)
+- [Repozytorium](https://livebooks.pl/materials/v1/102b)
+
+### Zależności
+- Spring Data
+```xml
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+```
+- Sterownik
+```
+<dependency>
+	<groupId>mysql</groupId>
+	<artifactId>mysql-connector-java</artifactId>
+</dependency>
+```
+### Encja JPA
+- Encja musi zawierać:
+  - adnotację @Entity
+  - bezparametrowy kontruktor
+  - gettery i settery do wszystkich pól, ktore maja być składowane w bazie
+  - pole do przechowywanioa id wraaz z adnoracją @id
+  
+#### Przykład
+```java
+@Entity
+public class User{
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	private String username;
+	private String surname;
+	
+	public Long getId(){
+		return id;
+	}
+	public void setId(Long id){
+		this.id = id;
+	}
+	public String getUsername(){
+		return username;
+	}
+	public void setUsername(String username){
+		this.username = username;
+	}
+	public String getSurname(){
+		return surname;
+	}
+	public void setSurname(String surname){
+		this.surname = surname;
+	}
+}
+```
+- Strategie generowanie kluicza:
+  - GenerationType.AUTO - framework i rodzaj bazy danych sami decydują o generowaniu,
+  - GenerationType.IDENTITY - generowanie zwiększając wartość o 1,
+  - GenerationType.SEQUENCE - generowanie na podstawie sekwencji,
+  - GenerationType.TABLE - informacja na temat ostatniego klucza jaki będzie przyznawany jest zapisywana w dodatkowej tabeli.
+  
+### Repozytorium
+- Wzorzec umożliwia zarzadzanie dostępem do danych i wykonywanie różnorodnych operacji na konkretnym ich typie,
+- Z perspektywy użytkowania repozytorium powinno zachować się jak kolekcja - obsługiwać takie operacje jak dodawanie, usuwanie, zawieranie, modyfikowanie itp..
+#### Przykład
+- Interfejs dostarczony przez Spring Data
+```java
+public interface JpaRepository<T, ID> extends PagingAndSortingRepository<T, ID>, QueryByExampleExecutor<T>{
+
+	@Override
+	findAll();
+	
+	@Override
+	List<T> findAll(Sort sort);
+	
+	@Override
+	List<T> findAllById(Iterable<ID> ids);
+	
+	@Override
+	<S extends T> List<S>saveAll(Iterable<S> entities);
+	
+	void flush();
+	
+	<S extends T> S saveAndFlush(S entity);
+	
+	void deleteInBatch(Iterable<T> entities);
+	
+	void deleteInBatch();
+	
+	T getOne(ID id);
+	
+	@Override
+	<S extends T> List<S>findAll(Example<S> example);
+	
+	@Override
+	<S extends T> List<S>findAll(Example<S> example, Sort sort);
+}
+``` 
+- Naszym zadaniem jest jedynie rozszerzanie istniejącego interfejsu
+```java
+public interface UserRepo extends JspaRepositry<User, Long>{
+}
+```
+### Konfiguracja
+```properties
+spring.datasource.password=password
+spring.datasource.username=username
+spring.datasource.url=jdbc:mysql://localhost:3306/database
+#strategia zarządzania schematem bazy
+spring.jpa.hibernate.ddl-auto=update
+```
+#### Strategie zarządzania schematem bazy danych
+- create:
+  - jeśli baza nie istnieje, utworzy ją,
+  - za każdym razem usuwa schemat bazy danych wraz z rekordami,
+  - usuwanie schematu nawiązuje tylko do tych tabel, które mają powiązanie z encjami JPA.
+- update:
+  - jeśli schemat bazy nie istnieje, to go utworzy,
+  - w przypadku kiedy schemat bazy danych jest rozbieżny z encjami JPA, to dokona się aktualizacja tabel,
+  - aktualizacja tabel tworzy jedynie nowe kolumny. W przypadku kiedy w encji JPA zostanie usunięte pole, update nie usunie kolumny, do której to pole nawiązywało,
+  - nie usuwa istniejących repordów znajdujących się w bazie,
+  - w przypadku rozszerzenia istniejącej tabeli o nową kolumnę, istniejące wpisy w DB zostaną uzupełnione w tej kolumnie wartością NULL.
+- create-drop
+  - jeśli baza danych nie istnieje, to utworzy ją,
+  - usuwa schemat bazy danych wraz z rekordami w momencie zamknięcia SessionFactory,
+  - usuwanie schematu nawiązuje tylko do tych tabel, które mają powiązanie z encjami JPA,
+  - przeważnie używany do testów.
+- validate
+  - sprawdza poprawność schematu,
+  - nie wprowadza żadnych zmian w bazie danych,
+  - jeśli struktura bazy danych nie istnieje, to jej nie utworzy,
+  - w przypadku braku tabel wyrzuci błąd `Table not found: <table name>`,
+  - sprawdza, czy kolumny pokrywają się  z polami, a w przypadku niepowodzenia zgłasza błąd.
+  
+### Utrwalanie danych
+```java
+public class UserManager{
+	User user = new User();
+	user.setUsername("Przemysław");
+	user.setSurname("Bykowski");
+	userRepo.save(user);
 	}
 }
 ```
