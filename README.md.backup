@@ -684,7 +684,6 @@ spring.jpa.hibernate.ddl-auto=update
   - usuwa schemat bazy danych wraz z rekordami w momencie zamknięcia SessionFactory,
   - usuwanie schematu nawiązuje tylko do tych tabel, które mają powiązanie z encjami JPA,
   - przeważnie używany do testów.
-  
 - validate
   - sprawdza poprawność schematu,
   - nie wprowadza żadnych zmian w bazie danych,
@@ -700,5 +699,110 @@ public class UserManager{
 	user.setSurname("Bykowski");
 	userRepo.save(user);
 	}
+}
+```
+## Spring Data - związki między relacjami
+- Krotności:
+  - 1:1
+  - 1:N
+  - M:N
+  
+- Wiązania:
+  - uniderectional - pierwsza encja wie o drugiej, a druga o pierwszej nie np. komputer i procesor
+  - bidirectional - encje wiedzą o sobie nawzajem, np. państwo i obywatele.
+  
+
+|RELATIONSHIP|ASSOCIATION|ENTITY_1|ENTITY_2|FOREIGN KEY LOC|
+|------------|-----------|--------|--------|---------------|
+|1:1|uniderectional|@OneToOne|-|ENTITY_1|
+||bidirectional|@OneToOne|OneToOne(mappedBy ="")|ENTITY_1|
+|1:N|uniderectional|@OneToMany @JoinColumn(name="")|-|ENTITY_2|
+||bidirectional|@OneToMany(mappedBy ="")|@ManyToOne|ENTITY_2|
+|M:N|uniderectional|@ManyToMany|-|NEW ADD TABLE|
+||bidirectional|@ManyToMany|@ManyToMany(mappedBy ="")|NEW ADD TABLE|
+- [Tabela online](https://livebooks.pl/materials/v1/107)
+- [Przykład video](https://livebooks.pl/materials/v1/115)
+- [Repozytorium](https://livebooks.pl/materials/v1/116)
+- [MyBatis video](https://livebooks.pl/materials/v1/117a)
+- - [Test wiedzy](https://livebooks.pl/materials/v1/117b)
+### Przykład 1:1 unidirectional
+```
+@Entity
+public class Processor {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	private String name;
+	/* getters and setters */
+}
+
+@Entity
+public class Computer {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	
+	@OnetoOne
+	private Processor processor;
+	/* getters and setters */
+}
+
+```
+- Klucz obcy znajduje sie po stronie komputera. Do jego zapisania konieczne jest pozyskanie klucza od procesora. Najpierw zapisujemy obiekt procesora, a potem pryzpisujemy go do komoutera.
+```
+@Service
+public class ElectronicsManager{
+
+public ElectronicsManager(ComputerRepo computerRepo, ProcessorRepo processorRepo){
+	Processor processor = new Processor();
+	processor.setName("Intel i5");
+	processorRepo.save(processor);
+	
+	Computer computer = new Computer();
+	computer.setProcessor(processor);
+	computerRepo.save(computer);
+}
+}
+```
+### Przykład 1:N bidirectional
+- Klucz obcy leży po stronie encji zwierzęcia, więc obiekt Zoo musi zostać zapisany jako pierwszy.
+- 
+```
+@Entity
+public class Animal {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	@ManyToOne
+	private Zoo zoo;
+	
+	/* getters and setters */
+}
+
+@Entity
+public class Zoo {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	
+    @OneToMany(mappedBy="zoo")
+    private Set<Animal> animals;
+   
+	/* getters and setters */
+}
+```
+- Atrybut `mappedBy` wskazuje atrybut w klasie relacji, które przechoduje referencje do danego obiektu,
+- Klasa z `mappedBy` przechowuje klucz obcy.
+
+```
+public void start(){
+	Zoo zoo = new Zoo();
+	zooRepo.save(zoo);
+	Animal animal1 = new Animal();
+	Animal animal2 = new Animal();
+	animal1.setZoo(zoo);
+	animal2.setZoo(zoo);
+	animalRepo.save(animal1);
+	animalRepo.save(animal2);
 }
 ```
