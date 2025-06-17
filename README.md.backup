@@ -724,7 +724,7 @@ public class UserManager{
 - [Przykład video](https://livebooks.pl/materials/v1/115)
 - [Repozytorium](https://livebooks.pl/materials/v1/116)
 - [MyBatis video](https://livebooks.pl/materials/v1/117a)
-- - [Test wiedzy](https://livebooks.pl/materials/v1/117b)
+- [Test wiedzy](https://livebooks.pl/materials/v1/117b)
 ### Przykład 1:1 unidirectional
 ```
 @Entity
@@ -804,5 +804,119 @@ public void start(){
 	animal2.setZoo(zoo);
 	animalRepo.save(animal1);
 	animalRepo.save(animal2);
+}
+```
+## NoSQL
+- Typy:
+  - kolumnowe
+  - grafowe
+  - dokumentowe
+  - klucz-wartość
+  
+### Mongo
+- [Przykład video](https://livebooks.pl/materials/v1/128a)
+- [Test wiedzy](https://livebooks.pl/materials/v1/128b)
+- Kiedy MongoDB
+  - Gdy potrzebujemy wydajności w dużych zbiorach danych
+  - Gdy zależy nam na wydajności i skalowalności
+  - Sprawdza  się w wyszukiwaniu kontektowym
+  
+- Kiedy nie wybierać MongoDB
+  - W aplikacjachg finansowych
+  - Gdy mamy tranzakcje i zależy nam na szybkim dostępie do danych po ich przetworzeniu
+- Nomenklatura
+
+|RDBMS|Mongo|
+|------------|-----------|
+|Database|Database|
+|Table|Collection|
+|Column|Field|
+|Row/Record|Document|
+|Table Join|Embedded Documents|
+
+#### Przykład
+```xml
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-data-mongodb</artifactId>
+</dependency>
+```
+
+```java
+public class Toy{
+	@Id 
+	private String id; //id jest generowane przez bazę
+	private String name;
+	private ToyType toyType;
+	
+	public Toy(){}
+	
+	public Toy(String name, ToyType toyType){
+		this.name = name;
+		this.toyType = toyType;
+	}
+	
+	public String getId(){
+		return id;
+	}
+	/* getters and setters */
+}
+
+@Repository
+public interface ToyRepo extends MongoRepository<Toy, String>{
+	
+}
+```
+- application.properties
+```
+spring.data.mongodb.uri=mongodb://localhost/database-name
+```
+#### Faker
+- Biblioteka do generowania przykładowych danych np. na potrzeby testów.
+```
+Faker faker = new Faker();
+Article article = new Article();
+article.setAuthor(faker.gameOfThrones().character());
+article.setTitle(faker.book().title());
+
+Comment comment1 = new Comment();
+comment1.setText(faker.chuckNorris.fact());
+
+```
+#### Query
+```
+Query query = new Query((Criteria.where("author").is("Przemek")));
+List<Article> byBarthogan = mongoTemplate.find(query, Article.class, "article");
+```
+#### Indeksy
+```
+@Document
+public class Article {
+
+	@Id
+	private String id;
+	
+	@Indexed(unique = true)
+	private String author;
+}
+```
+- Konfiguracja:
+```properties
+spring.data.mongodb.auto-index.creation=true
+
+```
+#### Tranzakcyjność
+- Od wersji 4
+- Konieczne jest dodanie spoecjalnego beana do rolbacków
+
+```java
+@Bean
+public MongoTransactionManager mongoTransactionManager(MongoDatabaseFactory mongoDatabaseFactory){
+	return new MongoTransactionManager(mongoDatabaseFactory);
+}
+
+@Transactional
+public void tryAddElement(){
+	/*some db operations*/
 }
 ```
