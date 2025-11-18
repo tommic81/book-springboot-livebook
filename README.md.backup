@@ -920,3 +920,253 @@ public void tryAddElement(){
 	/*some db operations*/
 }
 ```
+## Spring Security
+- [Przykład video](https://livebooks.pl/materials/v1/137a)
+- [Test wiedzy](https://livebooks.pl/materials/v1/137b)
+### Przykład implementacji
+```xml
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+```
+- Konfiguracja dla wersji < 2.7
+
+```java
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
+	
+	@Bean
+	public PasswordEncoder getPasswordEncoder(){
+		return new BCryptPasswordEncoder();
+	}
+	
+//konfiguracja użytkowników
+	@Override
+	protected void configure(AuthenticationManagerBuilder auth) throws Exception{
+		User userAdmin = new User("Jan", getPasswordEncoder().encode("Jan123"), Collections.singleton(new SimpleGrantedAuthority("ROLE_ADMIN")));
+		
+	    User userUser = new User("Karol", getPasswordEncoder().encode("Karol123"), Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")));
+	    
+	    auth.inMemoryAuthentication().withUser(userAdmin);
+	    auth.inMemoryAuthentication().withUser(userUser);
+	}
+
+	//działa na zasadzie filtra
+	@Override
+	protected void configure(HttpSecurity http) throws Exception{
+		http.authorizeRequests()
+			.antMatchers("/for-admin").hasRole("ADMIN")
+			.antMatchers("/for-user").hasRole("USER") //uwaga !! piszemy bez przedrostka ROLE_
+			.and()
+			.formLogin().permitAll()
+			.and()
+			.logout().logoutSuccessUrl("/forAll");
+	}
+}
+```
+
+- 
+
+
+- Konfiguracja dla wersji >= 2.7. Zgodnie z nową konfiguracją definiowane są osobne beany.
+
+```
+@Configuration
+public class SpringSecurityConfigNew{
+
+	@Bean
+	public PasswordEncoder getBcryptPasswordEncoder(){
+		return new BCryptPasswordEncoder();
+	}
+	
+	@Bean
+	public InMemoryUserDetailsManager get(){
+		UserDetails user = User.withUsername("jan")
+			.password(getBcryptPasswordEncoder().encode("jan123"))
+			.roles("USER")
+			.buid();
+			
+		UserDetails admin = User.withUsername("jan")
+			.password(getBcryptPasswordEncoder().encode("jan123"))
+			.roles("USER")
+			.buid();	
+			
+			return new InMemoryUserDetailsManager(Arrays.asList(user,admin));
+	}
+	
+		@Bean
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
+	
+	http.authorizeRequest((autz) -> autz
+		    .antMatchers("/for-user").hasAnyRole("USER","ADMIN")
+			.antMatchers("/for-admin").hasAuthority("ROLE_ADMIN")
+			.formLogin((formLogin) -> formLogin.permitAll())
+			.logout()
+			.logoutSuccessUrl("/bye").permitAll;
+	return http.build();
+}
+
+```
+## Komunikowanie i zarządzanie mikroserwisami
+- [Przykład video](https://livebooks.pl/materials/v1/144)
+- Mikroserwisy to SOA + DDD
+### DDD
+- Nacisk na odwzorowanie  potrzeb biznesowych
+- Najważniejsza jest dobra komunikacja pomiedzy zespołem projektowym, a zespołem analizy biznesowej
+- Podział odpowiedzialności projektu na ekspertów domenowych,
+- Podejscie iteracyjne do tworzenia projektu.
+
+### Service-oriented architecture (SOA)
+- Koncepcja tworzenia systemów informatycznych zorientowanych na usługi.
+- Usługa potrafi działać samodzielnie, ale jest też zdolna do komunikacji z systemami na wyższym poziomie.
+- Logika powinna być odizolowana od interfejsu. Zmiana implementacji nie wpływa na zmianę interfejsu.
+- Łatwe do odszukania jako usługa.
+- Jest bezstanowa tj. sesja nie ma wpływu na inną.
+- Raz stworzona usługa jest elastyczna i ma możliwość wykorzystania ponownie.
+- Zbudowana z mniejszych części, które są odizolowane od siebie.
+- Jest oparta na otwartych usłuchach, niezależna od języka programowania i technologii.
+
+## Spring Cloud - podstawy
+- [Repozytorium kodu](https://livebooks.pl/materials/v1/157)
+- [Test wiedzy](https://livebooks.pl/materials/v1/158)
+- Alternatywy do rozwiązan Netflixa obenie niedostępnych:
+  - Ribbon - Spring Cloud Load Balancer
+  - Hystrix - Spring Cloud Circuit Breaker
+  - Zuul - Spring Cloud Gateway
+### Discovery Service
+- Panel Admina
+- lokalizowanie usług
+
+#### Konfiguracja serwera
+```xml
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+</dependency>
+
+```
+- application.yml
+```
+eureka:
+	client:
+		registerWithEureka: false
+		fetchRegistry: false
+	server:
+		port: 8761
+```
+#### Konfiguracja klieta
+- Zależności
+```
+spring-cloud-starter-netflix-eureka-client,
+string-boot-starter-web
+```
+- Konfiguracja SpringBoot
+
+```
+server:
+	port: 0 //uruchamiamy aplikacje na losowym porcie
+spring:
+	application:
+		name: client-service
+eureka:
+	client:
+		service-url:
+			defaultZone: http://localhost:8761/eureka/
+instance:
+	instance-id: ${random.value}			
+
+```
+- Włączamy klienta Eureka adnotacjami
+```
+@SpringBootApplication
+@EnableEurekaClient
+public class ClientApplication{
+	public static void main(String[] args){
+		SpringApplication.run(ClientApplication.class, args);
+	}
+}
+```
+- Testowy kontroler
+```
+@RestController
+public class HelloApi{
+	@Value("${eureka.instance.instance-id}")
+	private String instanceName;
+	
+	@GetMapping
+	public String get(){
+	return "Instance: " + instanceName;
+	}
+}
+```
+### API Gateway
+- Reverse proxy
+- Warstwa posrednicząca pomiędzy użytkownikiem, a siecią mikrousług
+- Może pełnić funkcję loadbalancera
+
+#### Konfiguracja
+- Zależności
+
+```
+spring-cloud-starter-netflix-eureka-client,
+string-boot-starter-gateway
+
+```
+
+- Konfiguracja SpringBoot
+```yaml
+spring:
+	application:
+		name: GATEWAY-SERVICE
+	cloud:
+		gateway:
+			discovery:
+				locator:
+					enabled: true
+					
+server:
+	port: 8989
+	
+eureka:
+	client:
+		service-url:
+			defaultZone: http://localhost:8761/eureka/
+```
+### Configuration server
+- Przechowuje konfiguracje dla mikroserwisów w centralnym punkcie
+- [Przykładowe repozytorium](https://livebooks.pl/materials/v1/157)
+- [Test wiedzy](https://livebooks.pl/materials/v1/158)
+
+#### Konfiguracja
+- Zależności
+```xml
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-config-server</artifactId>
+</dependency>
+```
+- application.yml
+```yaml
+server:
+	port: 8012
+spring:
+	application:
+		name: config-server
+	cloud:
+		config:
+			server:
+				git:
+					clone-on-start: true
+					uri:https://github.com/bykowski/config-repo
+					username:przem@bykowski.pl
+					password:''
+```
+- Konfiguracja jest przychowywana w repozytorium git `uri:https://github.com/bykowski/config-repo`. Podczas startu serwera jest klonowana i udostępniana.
+- ConfigServer włącza adnotacja `@EnableConfigServer`
+- Konfiguracja klientów:
+  - bootstrap.properties
+```properties
+spring.cloud.config.uri=http://localhost:8012
+spring.cloud.config.name=config-server
+```	
+- Dodatkowa zależność, aby działało wczytywanie **bootstrap.properties** : `spring-cloud-starter-bootstrap`
